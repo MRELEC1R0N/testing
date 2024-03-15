@@ -1,35 +1,37 @@
+# server.py
 import socket
-import pyautogui
-import pickle
+import pygetwindow as gw
 import zlib
+import pickle
+
+def capture_screen():
+    screenshot = gw.getActiveWindow().screenshot()
+    return screenshot
 
 def main():
+    host = '127.0.0.1'  # Use your server's IP address
+    port = 12345
+
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.bind(('', 55000))  # Bind to all available network interfaces
+    server_socket.bind((host, port))
     server_socket.listen(1)
 
-    # Print the current IP address of the host
-    hostname = socket.gethostname()    
-    ip_address = socket.gethostbyname(hostname)
-    print("Server started. IP address:", ip_address)
+    print(f"Server listening on {host}:{port}")
 
-    print("Server started. Waiting for connection...")
+    client_socket, addr = server_socket.accept()
+    print(f"Connection from {addr}")
 
-    conn, addr = server_socket.accept()
-    print("Connection established with", addr)
+    while True:
+        try:
+            screenshot = capture_screen()
+            compressed_screenshot = zlib.compress(pickle.dumps(screenshot))
+            client_socket.sendall(compressed_screenshot)
+        except KeyboardInterrupt:
+            print("Server shutting down.")
+            break
 
-    try:
-        while True:
-            # Capture the screen content
-            screenshot = pyautogui.screenshot()
-            
-            # Compress the screenshot data
-            compressed_data = zlib.compress(pickle.dumps(screenshot))
-            
-            # Send the compressed data to the client
-            conn.sendall(compressed_data)
-    finally:
-        conn.close()
+    client_socket.close()
+    server_socket.close()
 
 if __name__ == "__main__":
     main()

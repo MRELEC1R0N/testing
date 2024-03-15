@@ -1,29 +1,27 @@
+# client.py
 import socket
-import pickle
 import zlib
+import pickle
 from PIL import Image
-import io
 
 def main():
-    server_ip = input("Enter server IP: ")
-    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client_socket.connect((server_ip, 55000))
+    host = '127.0.0.1'  # Use the server's IP address
+    port = 12345
 
-    try:
-        while True:
-            # Receive compressed screenshot data from the server
-            compressed_data = client_socket.recv(4096)
-            
-            # Decompress the data
-            screenshot_data = zlib.decompress(compressed_data)
-            
-            # Deserialize the data
-            screenshot = pickle.loads(screenshot_data)
-            
-            # Display the screenshot
-            screenshot.show()
-    finally:
-        client_socket.close()
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client_socket.connect((host, port))
+
+    while True:
+        try:
+            compressed_screenshot = client_socket.recv(4096)
+            screenshot = pickle.loads(zlib.decompress(compressed_screenshot))
+            img = Image.frombytes("RGB", screenshot.size, screenshot.tobytes())
+            img.show()  # Display the received screen
+        except KeyboardInterrupt:
+            print("Client shutting down.")
+            break
+
+    client_socket.close()
 
 if __name__ == "__main__":
     main()
