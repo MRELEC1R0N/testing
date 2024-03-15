@@ -1,32 +1,35 @@
 import socket
+import pyautogui
+import pickle
+import zlib
 
 def main():
-    # Create a socket object
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    
-    # Bind the socket to the host and port
-    server_socket.bind(('0.0.0.0', 9999))
-    
-    # Listen for incoming connections
+    server_socket.bind(('', 55000))  # Bind to all available network interfaces
     server_socket.listen(1)
-    
-    # Get the server's IP address
-    hostname = socket.gethostname()
-    server_ip = socket.gethostbyname(hostname)
-    print("Server IP address:", server_ip)
-    
+
+    # Print the current IP address of the host
+    hostname = socket.gethostname()    
+    ip_address = socket.gethostbyname(hostname)
+    print("Server started. IP address:", ip_address)
+
     print("Server started. Waiting for connection...")
-    
-    # Accept a client connection
+
     conn, addr = server_socket.accept()
-    print("Connection established with:", addr)
-    
-    # Send a message to the client
-    conn.sendall("Connection successful. Welcome to the server!".encode())
-    
-    # Close the connection
-    conn.close()
-    print("Connection closed.")
+    print("Connection established with", addr)
+
+    try:
+        while True:
+            # Capture the screen content
+            screenshot = pyautogui.screenshot()
+            
+            # Compress the screenshot data
+            compressed_data = zlib.compress(pickle.dumps(screenshot))
+            
+            # Send the compressed data to the client
+            conn.sendall(compressed_data)
+    finally:
+        conn.close()
 
 if __name__ == "__main__":
     main()
